@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapping — Картирование петель привычек</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-hover: #1a1a25;
+    --border: rgba(255,255,255,0.06);
+    --text: #e8e6e3;
+    --text-muted: #8a8a95;
+    --accent: #c9a96e;
+    --accent-dim: rgba(201,169,110,0.15);
+    --accent-glow: rgba(201,169,110,0.3);
+    --gradient-1: #c9a96e;
+    --gradient-2: #e8c88a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    line-height: 1.75;
+    font-size: 17px;
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+  }
+  .hero {
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 50% 50%, var(--accent-dim) 0%, transparent 60%);
+    animation: heroGlow 8s ease-in-out infinite alternate;
+  }
+  @keyframes heroGlow {
+    0% { opacity: 0.4; transform: scale(1); }
+    100% { opacity: 0.7; transform: scale(1.1); }
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 700px; }
+  .hero-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+    display: block;
+  }
+  .hero-label {
+    font-size: 0.8rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    font-weight: 500;
+  }
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+  .hero-subtitle {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    line-height: 1.7;
+    max-width: 550px;
+    margin: 0 auto 2.5rem;
+  }
+  .hero-scroll {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: bounce 2s infinite;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .hero-scroll svg { width: 18px; height: 18px; stroke: var(--accent); }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+  .content { max-width: 700px; margin: 0 auto; padding: 0 2rem 6rem; }
+  .section {
+    margin-bottom: 4rem;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .section.visible { opacity: 1; transform: translateY(0); }
+  .section-label {
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.3rem, 3vw, 1.7rem);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    line-height: 1.3;
+  }
+  .section p { margin-bottom: 1.2rem; }
+  .section strong { color: var(--accent); font-weight: 600; }
+  .highlight {
+    background: var(--accent-dim);
+    border-left: 3px solid var(--accent);
+    padding: 1.25rem 1.5rem;
+    border-radius: 0 10px 10px 0;
+    margin: 1.5rem 0;
+    font-style: italic;
+    line-height: 1.8;
+  }
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+  }
+  .step-card:hover {
+    border-color: var(--accent-glow);
+    background: var(--surface-hover);
+  }
+  .step-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .step-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+  }
+  .step-body { color: var(--text-muted); font-size: 0.95rem; }
+  .loop-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem;
+    margin: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .loop-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+  }
+  .loop-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .loop-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: var(--accent);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 0.15rem;
+  }
+  .loop-text { font-size: 0.95rem; }
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 3rem 0;
+    color: var(--accent);
+    opacity: 0.4;
+  }
+  .divider-line { width: 60px; height: 1px; background: var(--accent); }
+  .divider-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .quote-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin: 1.5rem 0;
+    position: relative;
+  }
+  .quote-block::before {
+    content: '\201C';
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    color: var(--accent);
+    opacity: 0.3;
+    position: absolute;
+    top: 0.25rem;
+    left: 1rem;
+    line-height: 1;
+  }
+  .quote-block p {
+    padding-left: 2rem;
+    font-style: italic;
+    color: var(--text-muted);
+  }
+  .quote-attr {
+    padding-left: 2rem;
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-top: 0.75rem;
+    font-style: normal;
+  }
+  .story-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+    margin: 2rem 0;
+  }
+  .story-card .story-header {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  .story-card p { margin-bottom: 1rem; color: var(--text-muted); }
+  .story-card p:last-child { margin-bottom: 0; }
+  .arrow-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0.75rem 0;
+    color: var(--accent);
+    opacity: 0.5;
+    font-size: 1.2rem;
+  }
+  .metaphor-block {
+    background: linear-gradient(135deg, var(--accent-dim), transparent);
+    border: 1px solid var(--accent-glow);
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin: 2rem 0;
+  }
+  .metaphor-block .metaphor-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+  .metaphor-block .metaphor-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    color: var(--accent);
+  }
+  .metaphor-block p { color: var(--text-muted); font-size: 0.95rem; }
+  .footer {
+    text-align: center;
+    padding: 4rem 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-style: italic;
+  }
+  .footer-book {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    font-style: normal;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 2rem;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+  }
+  .back-link:hover { opacity: 1; }
+  @media (max-width: 600px) {
+    body { font-size: 16px; }
+    .content { padding: 0 1.25rem 4rem; }
+  }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--accent-dim); border-radius: 3px; }
+  ::selection { background: var(--accent-glow); color: var(--text); }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-content">
+    <span class="hero-icon">🗺️</span>
+    <div class="hero-label">Практика 1 из 10 · Mapping</div>
+    <h1 class="hero-title">Mapping: Картирование петель привычек</h1>
+    <p class="hero-subtitle">Вы не можете починить то, чего не видите. Первый шаг к свободе от тревоги — нарисовать карту своих автоматических реакций и увидеть, как именно устроен ваш мозг.</p>
+    <a href="#start" class="hero-scroll">Читать <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></a>
+  </div>
+</section>
+
+<main class="content" id="start">
+
+  <a href="index.html" class="back-link">&larr; Все практики</a>
+
+  <!-- ===== SECTION 1: WHY MAPPING ===== -->
+  <div class="section">
+    <div class="section-label">Зачем это нужно</div>
+    <h2 class="section-title">Почему первый шаг — именно карта</h2>
+    <p>Наш мозг — машина по созданию привычек. Это не баг, а фича: мозг переводит повторяющиеся действия в «мышечную память», чтобы освободить ресурсы для нового. Именно так мы учимся ходить, водить машину, чистить зубы — и именно так формируются петли тревоги.</p>
+    <p>Проблема в том, что эти петли работают <strong>на автопилоте</strong>. Брюер сравнивает это с ездой по знакомому маршруту: вы настолько привыкли, что «просыпаетесь» только когда уже дома — и не помните, как добрались. Тревога работает точно так же. Триггер запускает реакцию, реакция даёт результат, результат закрепляет привычку — и всё это без вашего сознательного участия.</p>
+    <p>Mapping — это <strong>первая передача</strong> в системе Брюера. Без неё невозможно переключиться на вторую или третью. Это не «лечение» и не «починка». Это — включение света в тёмной комнате.</p>
+
+    <div class="metaphor-block">
+      <span class="metaphor-icon">💡</span>
+      <div class="metaphor-title">Метафора тёмной комнаты</div>
+      <p>Многие пациенты Брюера годами бродили в темноте, натыкаясь на вещи и пытаясь угадать, что поможет изменить привычки. Mapping — это момент, когда кто-то включает свет. Вдруг становится видно всё: и мебель, и стены, и выход. Чёрный ящик ума перестаёт быть чёрным.</p>
+    </div>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 2: HOW THE BRAIN LEARNS ===== -->
+  <div class="section">
+    <div class="section-label">Наука за практикой</div>
+    <h2 class="section-title">Как мозг создаёт привычки</h2>
+    <p>В основе всего лежит <strong>reward-based learning</strong> — обучение на основе вознаграждения. Это древнейший механизм выживания: увидел еду → попробовал → было вкусно → мозг запомнил «делай так снова». Наши предки на саванне использовали этот механизм, чтобы запоминать, где безопасно и где есть пища.</p>
+    <p>Механизм прост: <strong>триггер → поведение → результат</strong>. Если результат хоть немного «вознаграждающий» (даже просто снижение дискомфорта), мозг записывает эту последовательность и в следующий раз запускает её автоматически.</p>
+    <p>Тревога идеально вписывается в эту систему. Неопределённость вызывает дискомфорт («сделай что-нибудь!»), мозг находит любое действие, которое хоть немного снижает это чувство — беспокойство, избегание, переедание, скроллинг — и закрепляет его как привычку. Даже если это действие объективно не помогает.</p>
+
+    <div class="highlight">
+      Мозг не спрашивает, полезна ли привычка в долгосрочной перспективе. Он запоминает только одно: этот результат был чуть лучше, чем ничего. И поэтому повторяет. Снова и снова.
+    </div>
+
+    <p>Более того: <strong>беспокойство — это тоже поведение</strong>. Мы привыкли думать о поведении как о чём-то видимом: выпить, съесть, уйти. Но ментальные действия — тревожные мысли, прокручивание сценариев, поиск «почему» — тоже считаются. И они тоже формируют петли.</p>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 3: THREE ELEMENTS ===== -->
+  <div class="section">
+    <div class="section-label">Три элемента</div>
+    <h2 class="section-title">Анатомия петли привычки: T → B → R</h2>
+    <p>Каждую привычку можно разложить на три компонента. Брюер использует аббревиатуру <strong>TBR</strong>:</p>
+
+    <div class="step-card">
+      <span class="step-num">T</span>
+      <div class="step-title">Trigger — Триггер</div>
+      <div class="step-body">Что запускает реакцию? Это может быть ощущение в теле (сжатие в животе, учащённое сердцебиение), эмоция (тревога, одиночество, скука, злость), мысль («а вдруг не справлюсь», «это опасно»), ситуация (письмо от начальника, ссора) или даже время суток. Важно: триггер — это не «причина» привычки. Это просто стартовый сигнал.</div>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">B</span>
+      <div class="step-title">Behavior — Поведение</div>
+      <div class="step-body">Что вы делаете в ответ на триггер? Едите, скроллите ленту, беспокоитесь, откладываете дела, выпиваете, избегаете ситуацию, ищете утешения, кричите, проверяете почту в десятый раз. Помните: мысленное действие (беспокойство, анализ, «а что если...») — тоже поведение.</div>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">R</span>
+      <div class="step-title">Result — Результат</div>
+      <div class="step-body">Что вы получаете? Временное облегчение, чувство контроля, краткосрочное онемение эмоций, иллюзию «я хотя бы что-то делаю». Важно: «reward» — это термин мозга, а не ваша оценка. Результат мог когда-то быть полезным; именно поэтому мозг его запомнил. Сейчас он может быть вредным — но мозг всё равно повторяет схему.</div>
+    </div>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 4: JOHN'S STORY ===== -->
+  <div class="section">
+    <div class="section-label">История из книги</div>
+    <h2 class="section-title">Джон: три слоя петель</h2>
+    <p>Джон — мужчина за шестьдесят, пришёл к Брюеру по направлению терапевта из-за алкоголизма. Факты были суровыми: 6–8 порций виски каждый вечер, почти каждый день. Значительный лишний вес (одна порция виски — больше 100 калорий, а он выпивал почти тысячу калорий алкоголя ежедневно). Начинающееся поражение печени. И бизнес на грани — потому что Джон не мог заставить себя работать.</p>
+
+    <p>Брюер достал чистый лист бумаги. Вместе они нарисовали первую петлю:</p>
+
+    <div class="loop-card">
+      <div class="loop-label">Петля 1: Алкоголь</div>
+      <div class="loop-item"><span class="loop-tag">Триггер</span><span class="loop-text">Тревога к вечеру — день потрачен впустую, ничего не сделано</span></div>
+      <div class="loop-item"><span class="loop-tag">Поведение</span><span class="loop-text">Пить виски</span></div>
+      <div class="loop-item"><span class="loop-tag">Результат</span><span class="loop-text">Онемение, забвение, опьянение</span></div>
+    </div>
+
+    <p>Эта петля кажется очевидной на бумаге — но Джон, находясь внутри неё, не мог увидеть её сам. Брюер объяснил, что это не слабость и не моральный провал — так устроен мозг. Множество людей борются с тревогой и используют алкоголь, чтобы заглушить чувства.</p>
+
+    <p>Дальше они нарисовали вторую петлю — ту, что подпитывала первую:</p>
+
+    <div class="loop-card">
+      <div class="loop-label">Петля 2: Прокрастинация</div>
+      <div class="loop-item"><span class="loop-tag">Триггер</span><span class="loop-text">Утренняя тревога от вида кучи дел на столе</span></div>
+      <div class="loop-item"><span class="loop-tag">Поведение</span><span class="loop-text">Прокрастинация — телевизор вместо работы</span></div>
+      <div class="loop-item"><span class="loop-tag">Результат</span><span class="loop-text">Избегание (на пару часов). Потом — ещё больше тревоги</span></div>
+    </div>
+
+    <p>Всё было связано: утром Джон видел гору дел и тревожился. Вместо работы включал ТВ. К вечеру понимал, что снова ничего не сделал. Тревога нарастала. Он пил, чтобы заглушить её. Утром просыпался с похмельем, виной и ещё большей тревогой. И цикл повторялся.</p>
+
+    <div class="highlight">
+      За несколько минут рисования этих петель на бумаге — демонстрация Джона изменилась кардинально. Он пришёл тревожным и безнадёжным. Но когда увидел свою систему целиком — оживился и впервые стал надеяться на перемены.
+    </div>
+
+    <p>Брюер отправил Джона домой с простым заданием: продолжай картировать все свои петли тревоги.</p>
+
+    <p>Через несколько недель Джон вернулся — и даже не успел сесть, как начал возбуждённо рассказывать, что узнал о собственном уме. Он не только чётко видел свои петли, но и понял: алкоголь только ухудшает ситуацию — похмелье усиливает тревогу и мешает работать. <strong>Он бросил пить сразу, без постепенного снижения.</strong></p>
+
+    <p>Но это был не конец. Джон обнаружил ещё одну важнейшую петлю — в отношениях с женой:</p>
+
+    <div class="loop-card">
+      <div class="loop-label">Петля 3: Конфликт с женой</div>
+      <div class="loop-item"><span class="loop-tag">Триггер</span><span class="loop-text">Жена повышает голос (нормально для её культуры, но непривычно для него)</span></div>
+      <div class="loop-item"><span class="loop-tag">Поведение</span><span class="loop-text">Тревожится, что начинается конфликт</span></div>
+      <div class="loop-item"><span class="loop-tag">Результат</span><span class="loop-text">Тревога нарастает</span></div>
+    </div>
+
+    <div class="arrow-connector">↓</div>
+
+    <div class="loop-card">
+      <div class="loop-label">Петля 3b: Реакция на реакцию</div>
+      <div class="loop-item"><span class="loop-tag">Триггер</span><span class="loop-text">Нарастающая тревога</span></div>
+      <div class="loop-item"><span class="loop-tag">Поведение</span><span class="loop-text">Кричит на жену</span></div>
+      <div class="loop-item"><span class="loop-tag">Результат</span><span class="loop-text">Ссора, разлад в отношениях</span></div>
+    </div>
+
+    <p>Джон был американцем, его жена — китаянкой. Когда она увлечённо говорила, её тон повышался — это было совершенно нормально в её культуре, но у Джона срабатывал триггер. Он тревожился, потом кричал, жена не понимала почему, реагировала на его реакцию — и так по кругу, годами.</p>
+
+    <p><strong>Одного только картирования этой петли оказалось достаточно, чтобы отношения улучшились.</strong> Теперь, когда жена повышала голос, Джон напоминал себе: это привычная реакция моего мозга, а не реальная угроза. Делал глубокий вдох. И отвечал спокойно.</p>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 5: DAVE'S STORY ===== -->
+  <div class="section">
+    <div class="section-label">Ещё одна история</div>
+    <h2 class="section-title">Дэйв: когда тревога управляет всей жизнью</h2>
+
+    <div class="story-card">
+      <div class="story-header">Дэйв, 40 лет</div>
+      <p>Панические атаки начались на шоссе — Дэйв внезапно осознал, что едет в «огромной пуле на скорости 100 км/ч». Атаки стали такими сильными, что он полностью перестал ездить по шоссе.</p>
+      <p>Потом паника перекинулась на другие ситуации. В суши-ресторане с девушкой ему вдруг пришла мысль, что у него может быть аллергия на рыбу. Он понимал, что это иррационально — но голос в голове не оставлял выбора: «Опасно. Уходим. Немедленно.»</p>
+      <p>Дэйв не мог вспомнить ни одного периода жизни без тревоги — даже в детстве. Он пробовал алкоголь (стало хуже), ему выписывали лекарства (боялся принимать), ходил к психологам и даже к гипнотизёру. Его основной копинг-механизм — еда: тревога запускала переедание, от которого он набрал огромный вес, заработал гипертонию, жировой гепатоз и тяжёлое апноэ сна.</p>
+    </div>
+
+    <div class="loop-card">
+      <div class="loop-label">Основная петля Дэйва</div>
+      <div class="loop-item"><span class="loop-tag">Триггер</span><span class="loop-text">Мысль об опасности (шоссе, аллергия, любая неопределённость)</span></div>
+      <div class="loop-item"><span class="loop-tag">Поведение</span><span class="loop-text">Избегание: уехать, уйти, не выходить из дома</span></div>
+      <div class="loop-item"><span class="loop-tag">Результат</span><span class="loop-text">Мгновенное облегчение — но жизнь сжалась до размеров квартиры</span></div>
+    </div>
+
+    <div class="loop-card">
+      <div class="loop-label">Петля с едой</div>
+      <div class="loop-item"><span class="loop-tag">Триггер</span><span class="loop-text">Тревога</span></div>
+      <div class="loop-item"><span class="loop-tag">Поведение</span><span class="loop-text">Есть что-нибудь</span></div>
+      <div class="loop-item"><span class="loop-tag">Результат</span><span class="loop-text">Несколько минут отвлечения от тревоги</span></div>
+    </div>
+
+    <p>На первой же встрече Брюер нарисовал треугольник: триггер → поведение → результат. И спросил: «Всё верно? Мысль об опасности запускает избегание, а избегание даёт облегчение?» Дэйв ответил: «Это точно описывает мою жизнь.»</p>
+
+    <p>За несколько минут они увидели всю картину: система выживания мозга была «взломана» и превращена в бесконечный цикл тревоги. Тревога запускала беспокойство и избегание, которые запускали ещё больше тревоги и избегания.</p>
+
+    <div class="highlight">
+      Брюер подчёркивает: история Дэйва показывает простоту и важность mapping. Для этого не нужно много времени и не нужен визит к психиатру. Нужна только осознанность — а она бесплатна.
+    </div>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 6: ANXIETY AS HABIT LOOP ===== -->
+  <div class="section">
+    <div class="section-label">Ключевой инсайт</div>
+    <h2 class="section-title">Тревога — это тоже петля привычки</h2>
+    <p>Мало кто понимает, что <strong>сама тревога может быть привычкой</strong>. Нам кажется, что тревога — это реакция на события. Но Брюер (и исследователь Борковец до него) показали: тревога часто запускает беспокойство, беспокойство не находит решения и усиливает тревогу — и этот цикл становится самоподдерживающимся.</p>
+
+    <div class="loop-card">
+      <div class="loop-label">Петля «тревога → беспокойство → тревога»</div>
+      <div class="loop-item"><span class="loop-tag">Триггер</span><span class="loop-text">Тревога (иногда без конкретной причины)</span></div>
+      <div class="loop-item"><span class="loop-tag">Поведение</span><span class="loop-text">Беспокойство — попытка «продумать» проблему</span></div>
+      <div class="loop-item"><span class="loop-tag">Результат</span><span class="loop-text">Ещё больше тревоги (решение не находится)</span></div>
+    </div>
+
+    <p>Многие пациенты Брюера описывают одно и то же: они просыпаются утром уже тревожными — безо всякой причины. Тревога запускает гипердрайв беспокойства: мозг пытается найти, о чём конкретно беспокоиться. Когда конкретного повода нет — начинает беспокоиться обо всём подряд.</p>
+
+    <p>Хуже того: многие люди <strong>романтизируют свою тревогу</strong>, считая её необходимой для продуктивности. Как заметила редактор Брюера: «Если ты в стрессе — значит, ты вносишь вклад. Если не в стрессе — значит, ты неудачник.»</p>
+
+    <div class="quote-block">
+      <p>Я начала приписывать свой успех тревоге. Я хорошо училась и думала, что именно тревога заставляет меня стараться. Глубоко внутри я боялась: если отпущу тревогу — потеряю способность так упорно работать.</p>
+      <div class="quote-attr">— Участница программы Unwinding Anxiety</div>
+    </div>
+
+    <div class="quote-block">
+      <p>Я начала чувствовать тревогу и вспомнила картинку петли. Проследила свои мысли — и оказалось, что каждая из них ведёт к наихудшему сценарию в будущем. Само это узнавание сделало мысли менее личными и менее страшными: я увидела это как привычку ума, как историю, которую мозг рассказывает на автопилоте.</p>
+      <div class="quote-attr">— Участница программы Unwinding Anxiety</div>
+    </div>
+
+    <div class="quote-block">
+      <p>Я поняла, почему обращаюсь к еде, чтобы заглушить неприятные чувства — злость, тоску, беспокойство. Кто хочет их испытывать? Триггер: неприятное чувство. Поведение: съесть что-то, чтобы ненадолго приглушить. Результат: чувство всё ещё на месте, плюс головная боль от сахара. Я ясно вижу, как попала в эту петлю.</p>
+      <div class="quote-attr">— Участница программы Unwinding Anxiety</div>
+    </div>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 7: WHY ANTI-HABIT STRATEGIES FAIL ===== -->
+  <div class="section">
+    <div class="section-label">Почему другое не работает</div>
+    <h2 class="section-title">Сила воли, замена и контроль среды</h2>
+    <p>Прежде чем перейти к практике, важно понять: <strong>почему привычные стратегии не помогают с тревогой?</strong></p>
+
+    <p><strong>Сила воли.</strong> Она живёт в префронтальной коре — самой молодой и самой слабой части мозга. Под стрессом «древний мозг» просто отключает её. Именно когда вам больше всего нужна выдержка — её нет. Как говорит Брюер: если бы достаточно было сказать себе «успокойся» — он бы с радостью сменил профессию.</p>
+
+    <p><strong>Замена (подмена).</strong> «Хочешь курить — съешь конфету.» Проблема: петля остаётся на месте. Вы меняете поведение, но не корень. Один пациент Брюера запрограммировал бота, который ретвитил фото щенков, чтобы отвлекаться от тревоги. Не помогло: мозг быстро устаёт от таких трюков.</p>
+
+    <p><strong>Контроль среды.</strong> «Не держи мороженое в холодильнике.» Но вы не можете «не держать тревогу» нигде. Вы не можете объехать «магазин тревоги» по дороге домой. Как бы хорошо ни звучала идея «зоны без тревоги» — тревога придёт.</p>
+
+    <div class="highlight">
+      Все эти стратегии опираются на новый мозг — префронтальную кору. Но именно она отключается первой, когда тревога берёт верх. Mapping работает иначе: он использует осознанность, а не силу воли.
+    </div>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 8: TRAPS ===== -->
+  <div class="section">
+    <div class="section-label">Важные предупреждения</div>
+    <h2 class="section-title">Две ловушки, в которые попадают все</h2>
+
+    <div class="metaphor-block">
+      <span class="metaphor-icon">🔧</span>
+      <div class="metaphor-title">Ловушка механика</div>
+      <p>Вы слышите странный звук в машине. Звоните механику — и он объясняет проблему. Вместо того чтобы оставить машину на ремонт, вы решаете: «Я же теперь понимаю, в чём дело — починю сам!» Результат? Вы везёте машину обратно, и механику приходится чинить и первоначальную поломку, и то, что вы сломали, пытаясь починить. <strong>Не делайте этого с привычками.</strong></p>
+    </div>
+
+    <p>Брюер предупреждает: как только люди начинают видеть свои петли — они моментально хотят их «починить». Это само по себе является петлёй привычки:</p>
+
+    <div class="loop-card">
+      <div class="loop-label">Петля «починки»</div>
+      <div class="loop-item"><span class="loop-tag">Триггер</span><span class="loop-text">Начинаю ясно видеть свои петли привычек</span></div>
+      <div class="loop-item"><span class="loop-tag">Поведение</span><span class="loop-text">Пытаюсь их исправить с помощью уже знакомых (не работающих) инструментов</span></div>
+      <div class="loop-item"><span class="loop-tag">Результат</span><span class="loop-text">Ничего не меняется. Или становится хуже.</span></div>
+    </div>
+
+    <div class="metaphor-block">
+      <span class="metaphor-icon">🥋</span>
+      <div class="metaphor-title">Ловушка Каратэ-кида</div>
+      <p>В фильме «Малыш-каратист» Дэниэл приходит к мистеру Мияги, полный энтузиазма: «Научи меня каратэ!» Но Мияги не даёт ему книгу и не ставит перед зеркалом. Вместо этого — «намыль, смой», «покрась забор», «натри машину». Мияги знал: если дать концепцию без опыта, ученик побежит «делать каратэ» после прочитанной книги — и получит по лицу. Нельзя прочитать книгу Брюса Ли и выйти на улицу Брюсом Ли. <strong>Концепции не превращаются в мудрость по щелчку пальцев. Нужно делать работу.</strong></p>
+    </div>
+
+    <p>Ещё одна типичная ловушка:</p>
+
+    <div class="loop-card">
+      <div class="loop-label">Петля «проглотить книгу»</div>
+      <div class="loop-item"><span class="loop-tag">Триггер</span><span class="loop-text">Увидели новую книгу про тревогу или изменение привычек</span></div>
+      <div class="loop-item"><span class="loop-tag">Поведение</span><span class="loop-text">Проглотить за один вечер</span></div>
+      <div class="loop-item"><span class="loop-tag">Результат</span><span class="loop-text">Понять концепции — но ничего не изменить</span></div>
+    </div>
+
+    <p>Mapping — это не одноразовое упражнение. Это навык, который нужно нарабатывать через повторение и собственный опыт. Именно поэтому первая треть книги Брюера целиком посвящена картированию. Не перескакивайте к «починке».</p>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 9: TRIGGERS NOTE ===== -->
+  <div class="section">
+    <div class="section-label">Важный нюанс</div>
+    <h2 class="section-title">Триггеры — не самое важное</h2>
+    <p>Многие люди, начав картировать петли, зацикливаются на триггерах: «Почему я начал тревожиться? Откуда это взялось? Что в моём прошлом привело к этому?»</p>
+    <p>Брюер предупреждает: <strong>триггеры — наименее важная часть петли</strong>. Reward-based learning основан на результатах, а не на триггерах (потому и называется «обучение на основе вознаграждения»). Искать «почему» — это ещё одна петля привычки: нам кажется, что если мы найдём причину, всё волшебным образом починится. Но знание «почему» не меняет привычку в настоящем моменте.</p>
+    <div class="highlight">
+      Не пытайтесь найти все триггеры. Не уходите в психоанализ всех детских воспоминаний. Картируйте то, что видите прямо сейчас — триггер, поведение, результат. Остальное придёт позже.
+    </div>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 10: EVIDENCE ===== -->
+  <div class="section">
+    <div class="section-label">Доказательства</div>
+    <h2 class="section-title">Mapping работает: данные исследований</h2>
+    <p>Лаборатория Брюера провела рандомизированное контролируемое исследование с людьми, у которых было диагностировано генерализованное тревожное расстройство. Участники, которые использовали приложение Unwinding Anxiety (основанное на тех же принципах mapping + mindfulness), показали <strong>снижение тревожности на 63%</strong> за два месяца.</p>
+    <p>Для сравнения: стандартные антидепрессанты для тревоги имеют NNT (число пациентов, которых нужно пролечить, чтобы один получил значимый эффект) = 5.15. У программы Брюера NNT = 1.6 — то есть эффективность значительно выше.</p>
+    <p>В отдельном исследовании с врачами (которые особенно подвержены выгоранию) mapping + mindfulness привели к <strong>57% снижению тревожности</strong> и значительному уменьшению цинизма и выгорания.</p>
+    <p>Математическое моделирование показало механизм: осознанность приводит к снижению беспокойства, которое в свою очередь снижает тревогу. Не наоборот. Сначала вы видите петлю — потом петля ослабевает.</p>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 11: PRACTICE ===== -->
+  <div class="section">
+    <div class="section-label">Что делать прямо сейчас</div>
+    <h2 class="section-title">Ваше задание: Mind-Mapping</h2>
+
+    <p>Возьмите чистый лист бумаги (или откройте заметку в телефоне). Выберите одну привычку, которая вас беспокоит — тревога, переедание, прокрастинация, скроллинг, что угодно. Запишите три элемента:</p>
+
+    <div class="highlight">
+      <strong>T — Мой триггер:</strong> ___<br><br>
+      <strong>B — Моё поведение:</strong> ___<br><br>
+      <strong>R — Мой результат:</strong> ___
+    </div>
+
+    <p>Начните с самых очевидных петель. Затем ищите вложенные: как у Джона, одна петля может питать другую. Петля прокрастинации усиливала петлю алкоголя. Петля тревоги запускала петлю конфликтов с женой.</p>
+
+    <p><strong>Правила первой передачи:</strong></p>
+
+    <div class="step-card">
+      <span class="step-num">1</span>
+      <div class="step-title">Только наблюдайте</div>
+      <div class="step-body">Не пытайтесь ничего менять. Задача mapping — только видеть. Как включить свет в тёмной комнате: вы пока не двигаете мебель, просто осматриваетесь.</div>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">2</span>
+      <div class="step-title">Картируйте в реальном времени</div>
+      <div class="step-body">Ловите петли не задним числом, а в момент, когда они происходят. Рука потянулась к телефону — стоп, что был триггер? Что я сейчас чувствую? Что я надеюсь получить?</div>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">3</span>
+      <div class="step-title">Ищите слои</div>
+      <div class="step-body">У Джона было три петли. У вас, скорее всего, тоже больше одной. Посмотрите: нет ли петли, которая запускает другую петлю? Петли часто связаны друг с другом, как матрёшки.</div>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">4</span>
+      <div class="step-title">Не ругайте себя</div>
+      <div class="step-body">Если заметили, что осуждаете себя за привычку — картируйте и это как петлю. Триггер: увидел свою привычку. Поведение: самокритика. Результат: ещё хуже.</div>
+    </div>
+
+    <div class="step-card">
+      <span class="step-num">5</span>
+      <div class="step-title">Делайте это несколько дней</div>
+      <div class="step-body">Mapping — не одноразовое упражнение. Носите блокнот или пользуйтесь заметками. Чем больше петель вы заметите — тем яснее станет картина. «Намыль, смой» — повторяйте.</div>
+    </div>
+  </div>
+
+  <div class="divider"><span class="divider-line"></span><span class="divider-dot"></span><span class="divider-line"></span></div>
+
+  <!-- ===== SECTION 12: KEY TAKEAWAYS ===== -->
+  <div class="section">
+    <div class="section-label">Главное</div>
+    <h2 class="section-title">Что запомнить</h2>
+
+    <div class="highlight">
+      Петли привычек управляют вами, пока вы их не видите. Первый шаг к тому, чтобы вернуть контроль — просто обратить внимание и нарисовать карту. Каждый раз, когда вы картируете петлю — вы чуть меньше на автопилоте и чуть больше управляете своей жизнью.
+    </div>
+
+    <p>Изменение привычек — это тяжёлая работа. Но она не должна быть болезненной. Повторите за Брюером: <strong>«Изменение привычек — это тяжёлая работа, но она не должна причинять боль.»</strong></p>
+
+    <p>Не перескакивайте к починке. Не глотайте книгу за вечер. Делайте работу первой передачи: картируйте, замечайте, рисуйте. Остальное придёт.</p>
+
+    <div class="quote-block">
+      <p>Никто не может вернуться назад и начать с нуля, но каждый может начать сегодня и создать новый финал.</p>
+      <div class="quote-attr">— Мария Робинсон (эпиграф к части о mapping)</div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-book">Judson Brewer &laquo;Unwinding Anxiety&raquo; (2021)</div>
+  <p>Практика 1 из 10 · Mapping · Главы 4–8</p>
+</footer>
+
+<script>
+const sections = document.querySelectorAll('.section');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('visible');
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+sections.forEach(s => observer.observe(s));
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const t = document.querySelector(a.getAttribute('href'));
+    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+
+</body>
+</html>
